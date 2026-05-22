@@ -8,11 +8,17 @@ const OpenAI = require('openai');
 
 class ItineraryAdjustmentService {
     constructor() {
-        // CHANGED: Use OpenRouter configuration to match your .env file
-        this.openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY,
-            baseURL: "https://openrouter.ai/api/v1"
-        });
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        this.openai = apiKey
+            ? new OpenAI({
+                apiKey,
+                baseURL: "https://openrouter.ai/api/v1"
+            })
+            : null;
+
+        if (!this.openai) {
+            console.warn('OPENROUTER_API_KEY not configured. Itinerary adjustment AI features will use fallbacks.');
+        }
     }
 
     // Main analysis function - looks at an itinerary and finds improvement opportunities
@@ -240,6 +246,10 @@ Constraints:
 Please suggest a reshuffled itinerary that accommodates these constraints while keeping the trip enjoyable.
 Return a brief explanation of changes made.
 `;
+
+            if (!this.openai) {
+                return 'OpenAI API key is not configured, so itinerary reshuffling is not available. Please set OPENROUTER_API_KEY to enable AI adjustments.';
+            }
 
             const response = await this.openai.chat.completions.create({
                 model: 'meta-llama/llama-3.1-8b-instruct', // CHANGED: Compatible model for OpenRouter

@@ -12,6 +12,8 @@ function formatItinerary(plan) {
   const lines = plan.split("\n").filter(Boolean);
 
   return lines.map((line, index) => {
+    const normalized = line.replace(/\*\*/g, "");
+
     // Day headings
     if (line.startsWith("**Day")) {
       return (
@@ -19,36 +21,46 @@ function formatItinerary(plan) {
           key={index}
           className="mt-8 mb-3 text-xl font-bold text-teal-600 dark:text-teal-400"
         >
-          {line.replace(/\*\*/g, "")}
+          {normalized}
         </h3>
       );
     }
 
-    // Section headings (Morning / Afternoon / Evening / Budget)
+    // Section headings (MUST-VISIT / TRIP DETAILS / WEATHER NOTES / TRAVEL DETAILS)
     if (
-      line.includes("Morning") ||
-      line.includes("Afternoon") ||
-      line.includes("Evening") ||
-      line.includes("Budget")
+      normalized.toUpperCase().includes("MUST-VISIT") ||
+      normalized.toUpperCase().includes("TRIP DETAILS:") ||
+      normalized.toUpperCase().includes("TRAVEL DETAILS:") ||
+      normalized.toUpperCase().includes("WEATHER NOTES:")
     ) {
       return (
-        <p
+        <h4
           key={index}
-          className="mt-4 font-semibold text-gray-900 dark:text-gray-100"
+          className="mt-6 mb-2 text-lg font-bold text-gray-900 dark:text-gray-100"
         >
-          {line.replace(/\*\*/g, "")}
+          {normalized}
+        </h4>
+      );
+    }
+
+    // Subsections like Travel Details and Weather
+    if (normalized.startsWith("Travel Details:") || normalized.startsWith("Weather:")) {
+      const [label, ...rest] = normalized.split(":");
+      return (
+        <p key={index} className="mt-3 text-gray-800 dark:text-gray-200 leading-relaxed">
+          <span className="font-semibold">{label}:</span> {rest.join(":").trim()}
         </p>
       );
     }
 
     // Bullet points
-    if (line.trim().startsWith("*")) {
+    if (line.trim().startsWith("- ") || line.trim().startsWith("*")) {
       return (
         <li
           key={index}
           className="ml-6 list-disc text-gray-700 dark:text-gray-300"
         >
-          {line.replace("*", "").trim()}
+          {line.replace(/^[-*]\s*/, "").trim()}
         </li>
       );
     }
@@ -59,11 +71,12 @@ function formatItinerary(plan) {
         key={index}
         className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
       >
-        {line}
+        {normalized}
       </p>
     );
   });
 }
+
 
 // Review Item Component
 function ReviewItem({ icon, label, value }) {
@@ -222,7 +235,7 @@ export default function TripPlanner() {
               <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center">
                 <MapPin className="w-6 h-6 mr-3 text-teal-500" /> Trip Summary
               </h2>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-4 gap-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
                   <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Destination</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{formData.destination}</p>
@@ -234,6 +247,11 @@ export default function TripPlanner() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
                   <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Travelers</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{formData.travelers} {formData.travelers === 1 ? 'Person' : 'People'}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Budget & Interests</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{formData.budget.charAt(0).toUpperCase() + formData.budget.slice(1)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{formData.interests.length > 0 ? formData.interests.join(', ') : 'General travel'}</p>
                 </div>
               </div>
             </div>
@@ -273,9 +291,10 @@ export default function TripPlanner() {
               <ArrowLeft className="w-5 h-5 mr-2" /> Plan Another Trip
             </button>
             <button onClick={() => window.print()} className="px-8 py-4 bg-teal-500 text-white rounded-xl font-bold shadow-lg shadow-teal-500/30">
-              Print Itinerary
+              Download as PDF
             </button>
           </div>
+          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">When the print dialog appears, choose "Save as PDF" to download your itinerary.</p>
         </div>
       </div>
     );

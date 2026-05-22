@@ -227,12 +227,16 @@ class WeatherService {
         return alternatives;
     }
 
-    // Mock weather data for testing
+    // Mock weather data for testing; return only the requested date range
     _getMockWeather(location, dates) {
         const forecasts = [];
-        const startDate = new Date(dates.start || dates[0]);
+        const startStr = dates.start || (Array.isArray(dates) ? dates[0] : null);
+        const endStr = dates.end || (Array.isArray(dates) ? dates[dates.length - 1] : null);
+        const startDate = startStr ? new Date(startStr) : new Date();
+        const endDate = endStr ? new Date(endStr) : new Date(startDate);
+        const dayCount = Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1);
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < dayCount; i++) {
             const date = new Date(startDate);
             date.setDate(date.getDate() + i);
 
@@ -244,7 +248,7 @@ class WeatherService {
                     avg: 22
                 },
                 condition: i === 2 ? 'Rain' : 'Clear',
-                precipitation: i === 2 ? 80 : Math.random() * 30,
+                precipitation: i === 2 ? 80 : Math.round(Math.random() * 30),
                 description: i === 2 ? 'moderate rain' : 'clear sky',
                 icon: i === 2 ? '10d' : '01d',
                 windSpeed: 10 + Math.random() * 10,
