@@ -7,7 +7,7 @@ import {
   X, ArrowLeft, Star, History, ExternalLink
 } from 'lucide-react';
 import { api } from '../services/api';
-import { useNavigate } from 'react-router-dom';
+
 
 function formatItinerary(plan) {
   if (!plan) return null;
@@ -88,7 +88,7 @@ function ReviewItem({ icon, label, value }) {
 }
 
 export default function TripPlanner() {
-  const navigate = useNavigate();
+  
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     destination: '',
