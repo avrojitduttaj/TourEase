@@ -76,6 +76,7 @@ export default function Destinations() {
               placeholder="Search destinations by name, type, or season..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
               className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-gray-200 dark:border-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:outline-none text-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
             />
           </div>
