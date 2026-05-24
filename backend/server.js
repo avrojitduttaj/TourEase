@@ -15,11 +15,16 @@ const tripRoutes = require("./routes/tripRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
 const chatRoutes = require("./routes/chatroutes");
 const expenseRoutes = require("./routes/expenseRoutes");
+const helmet = require("helmet");
+
+
 
 // Connect to Database
 connectDB();
 
 const app = express();
+
+app.use(helmet());
 
 app.use(cors());
 app.use(express.json());
