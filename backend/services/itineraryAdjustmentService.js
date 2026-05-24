@@ -17,6 +17,12 @@ class ItineraryAdjustmentService {
             : undefined,
         })
       : null;
+
+    if (!this.openai) {
+      console.warn(
+        "No API key configured. Itinerary adjustment AI features will use fallbacks."
+      );
+    }
   }
 
   // Main analysis function - looks at an itinerary and finds improvement opportunities
@@ -32,11 +38,7 @@ class ItineraryAdjustmentService {
           start: startDate,
           end: endDate,
         }),
-        disruptionService.getCurrentDisruptions(
-          destination,
-          startDate,
-          endDate,
-        ),
+        disruptionService.getCurrentDisruptions(destination, startDate, endDate),
       ]);
 
       // Check for weather issues
@@ -50,7 +52,7 @@ class ItineraryAdjustmentService {
       const eventSuggestions = this._generateEventSuggestions(
         dailySchedule,
         events,
-        interests,
+        interests
       );
       suggestions.push(...eventSuggestions);
 
@@ -58,21 +60,21 @@ class ItineraryAdjustmentService {
       const weatherSuggestions = this._generateWeatherSuggestions(
         dailySchedule,
         weather,
-        weatherDisruptions,
+        weatherDisruptions
       );
       suggestions.push(...weatherSuggestions);
 
       // Disruption-based suggestions
       const disruptionSuggestions = this._generateDisruptionSuggestions(
         dailySchedule,
-        disruptions,
+        disruptions
       );
       suggestions.push(...disruptionSuggestions);
 
       // Score and rank all suggestions
       const rankedSuggestions = this._scoreAndRankSuggestions(
         suggestions,
-        interests,
+        interests
       );
 
       return {
@@ -112,7 +114,7 @@ class ItineraryAdjustmentService {
         // Calculate relevance score
         const relevance = eventService.calculateRelevanceScore(
           event,
-          interests,
+          interests
         );
 
         // Only suggest if highly relevant
@@ -155,7 +157,7 @@ class ItineraryAdjustmentService {
       if (matchingDay && matchingDay.activities) {
         // Check if this day has outdoor activities planned
         const hasOutdoorActivities = matchingDay.activities.some((act) =>
-          this._isOutdoorActivity(act),
+          this._isOutdoorActivity(act)
         );
 
         if (hasOutdoorActivities) {
@@ -221,14 +223,12 @@ class ItineraryAdjustmentService {
 
   // Score and rank suggestions by importance
   _scoreAndRankSuggestions(suggestions, interests = []) {
-    // Sort by score (higher is better)
     return suggestions.sort((a, b) => b.score - a.score);
   }
 
   // Suggest best time to add an event to the day
   _suggestEventTime(event, day) {
     const eventHour = new Date(event.date).getHours();
-
     if (eventHour < 12) return "morning";
     if (eventHour < 17) return "afternoon";
     return "evening";
@@ -249,7 +249,6 @@ class ItineraryAdjustmentService {
       "tour",
       "sightseeing",
     ];
-
     const activityText = (
       activity.activity ||
       activity.name ||
@@ -279,7 +278,7 @@ Return a brief explanation of changes made.
 `;
 
       const response = await this.openai.chat.completions.create({
-        model: "meta-llama/llama-3.1-8b-instruct", // CHANGED: Compatible model for OpenRouter
+        model: "meta-llama/llama-3.1-8b-instruct",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 500,
       });
