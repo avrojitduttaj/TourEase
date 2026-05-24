@@ -1,10 +1,15 @@
 const OpenAI = require("openai");
 const weatherService = require("../services/weatherService");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-});
+const openaiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+const openai = openaiKey
+  ? new OpenAI({
+      apiKey: openaiKey,
+      baseURL: process.env.OPENROUTER_API_KEY
+        ? "https://openrouter.ai/api/v1"
+        : undefined,
+    })
+  : null;
 
 // ============================
 // GENERATE INITIAL ITINERARY
@@ -28,18 +33,24 @@ const generateTrip = async (req, res) => {
     // --- Fetch Weather Context ---
     let weatherContext = "Weather data unavailable for these dates.";
     try {
-      const forecast = await weatherService.getWeatherForecast(destination, { 
-        start: startDate, 
-        end: endDate 
+      const forecast = await weatherService.getWeatherForecast(destination, {
+        start: startDate,
+        end: endDate,
       });
-      
+
       if (forecast && forecast.length > 0) {
-        weatherContext = forecast.map(day => 
-          `Date: ${day.date}, Condition: ${day.condition}, Temp: ${day.temp.avg}°C, Rain Probability: ${day.precipitation}%`
-        ).join("\n");
+        weatherContext = forecast
+          .map(
+            (day) =>
+              `Date: ${day.date}, Condition: ${day.condition}, Temp: ${day.temp.avg}°C, Rain Probability: ${day.precipitation}%`,
+          )
+          .join("\n");
       }
     } catch (weatherErr) {
-      console.error("⚠️ Weather service integration error:", weatherErr.message);
+      console.error(
+        "⚠️ Weather service integration error:",
+        weatherErr.message,
+      );
     }
 
     const interestText =
@@ -71,6 +82,10 @@ IMPORTANT PLANNING RULES:
 Return in clean readable text.
 `;
 
+    if (!openai) {
+      throw new Error("OpenAI key is not configured");
+    }
+
     const response = await openai.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
       messages: [{ role: "user", content: prompt }],
@@ -87,25 +102,30 @@ Return in clean readable text.
     res.json({ plan });
   } catch (error) {
     console.error("❌ AI Error:", error);
-    
+
     // Provide a beautiful mock fallback itinerary so local testing works flawlessly even without valid API keys!
-    console.log("ℹ️ Returning a highly detailed mock fallback plan for local development...");
+    console.log(
+      "ℹ️ Returning a highly detailed mock fallback plan for local development...",
+    );
     const dest = destination || "your destination";
     const budgetTier = budget || "moderate";
-    const daysCount = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1 || 3;
-    
+    const daysCount =
+      Math.ceil(
+        (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24),
+      ) + 1 || 3;
+
     let mockPlan = `🌴 Welcome to your premium AI itinerary for ${dest}! 🌴\n\n`;
     mockPlan += `📅 Dates: ${startDate} to ${endDate} (${daysCount} Days) | 👥 Travelers: ${travelers} | 💰 Budget: ${budgetTier.toUpperCase()}\n\n`;
-    
+
     for (let d = 1; d <= daysCount; d++) {
       mockPlan += `📍 Day ${d}: Exploring ${dest}\n`;
       mockPlan += `🌅 Morning: Start your morning with a refreshing breakfast at a local cafe. Head out for a sightseeing walk around the historic district of ${dest}.\n`;
       mockPlan += `☀️ Afternoon: Enjoy a gourmet lunch highlighting regional specialties. Spend the afternoon exploring museum exhibitions and shopping for local souvenirs.\n`;
       mockPlan += `🌙 Evening: Indulge in a premium dining experience. Wind down with an evening stroll or enjoy panoramic night views of ${dest}.\n\n`;
     }
-    
+
     mockPlan += `💡 Travel Tip: Keep a light umbrella handy and make sure to purchase local transit passes for smooth exploration!`;
-    
+
     res.json({ plan: mockPlan });
   }
 };
@@ -140,6 +160,10 @@ Rules:
 
 Return the updated itinerary only.
 `;
+
+    if (!openai) {
+      throw new Error("OpenAI key is not configured");
+    }
 
     const response = await openai.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
